@@ -8,51 +8,55 @@ import pandas as pd
 st.set_page_config(page_title="📈 Reddit Stock Sentiment", layout="wide")
 st.title("📊 Reddit Stock Sentiment Analysis")
 
-# Sidebar input
-with st.sidebar:
-    st.header("🔍 Search Settings")
-    stock = st.text_input("Enter a stock keyword or ticker:", value="AAPL")
-    subreddit = st.selectbox("Select subreddit:", ["ALL", "wallstreetbets", "stocks", "investing"])
-    limit = st.slider("Number of posts to fetch:", min_value=10, max_value=200, value=100)
-    analyze_btn = st.button("Run Sentiment Analysis")
-
-# --- Always show stock price chart first ---
+# --- Stock Chart Section ---
 st.subheader("📈 Stock Price Trend")
-interval_option = st.radio("Select interval:", ["D", "W", "M", "Y"], horizontal=True)
 
-# Always pull 5 years of data, filter for default view based on interval
+if "interval_option" not in st.session_state:
+    st.session_state.interval_option = "D"
+
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    if st.button("D"):
+        st.session_state.interval_option = "D"
+with col2:
+    if st.button("W"):
+        st.session_state.interval_option = "W"
+with col3:
+    if st.button("M"):
+        st.session_state.interval_option = "M"
+with col4:
+    if st.button("Y"):
+        st.session_state.interval_option = "Y"
+
+interval_option = st.session_state.interval_option
 period, interval = "5y", "1d"
-
 if interval_option == "W":
     interval = "1wk"
 elif interval_option == "M":
     interval = "1mo"
 elif interval_option == "Y":
-    interval = "1y"
+    interval = "3mo"
 
-stock_price_df = get_stock_price_data(stock, period="5y", interval=interval)
+stock_price_df = get_stock_price_data("AAPL", period=period, interval=interval)
 
 if stock_price_df.empty:
     st.warning("📉 Could not fetch stock data. Check ticker symbol.")
 else:
     # Filter for default zoom views with timezone-naive datetime
-    stock_price_df['Date'] = stock_price_df['Date'].dt.tz_localize(None)
-    now = pd.Timestamp.now()
-
     if interval_option == "D":
-        default_range_start = now - pd.Timedelta(days=30)
+        zoom_df = stock_price_df[stock_price_df['Date'].dt.tz_localize(None) >= pd.Timestamp.now() - pd.Timedelta(days=30)]
     elif interval_option == "W":
-        default_range_start = pd.Timestamp(year=now.year, month=1, day=1)
+        zoom_df = stock_price_df[stock_price_df['Date'].dt.tz_localize(None).dt.year == pd.Timestamp.now().year]
     elif interval_option == "M":
-        default_range_start = now - pd.DateOffset(years=1)
-    else:  # Y
-        default_range_start = now - pd.DateOffset(years=5)
+        zoom_df = stock_price_df[stock_price_df['Date'].dt.tz_localize(None) >= pd.Timestamp.now() - pd.DateOffset(years=1)]
+    else:
+        zoom_df = stock_price_df.copy()
 
     fig = px.line(
-        stock_price_df,
+        zoom_df,
         x="Date",
         y="Close",
-        title=f"{stock.upper()} Stock Price - Interval: {interval_option}",
+        title=f"AAPL Stock Price - Interval: {interval_option}",
         labels={"Close": "Price (USD)", "Date": "Date"}
     )
     fig.update_layout(
@@ -62,12 +66,20 @@ else:
         xaxis_title="Date",
         yaxis_title="Price (USD)",
         xaxis_rangeslider=dict(visible=True),
-        xaxis=dict(range=[default_range_start, now])
+        xaxis=dict(rangeselector=dict(buttons=[]))
     )
     st.plotly_chart(fig, use_container_width=True)
 
+# --- Sidebar input ---
+with st.sidebar:
+    st.header("🔍 Search Settings")
+    stock = st.text_input("Enter a stock keyword or ticker:", value="AAPL")
+    subreddit = st.selectbox("Select subreddit:", ["ALL", "wallstreetbets", "stocks", "investing"])
+    limit = st.slider("Number of posts to fetch:", min_value=10, max_value=200, value=100)
+    run_sentiment = st.button("Run Sentiment Analysis")
+
 # --- Sentiment analysis section ---
-if analyze_btn:
+if run_sentiment:
     with st.spinner("Fetching and analyzing Reddit posts..."):
         df = fetch_reddit_posts(stock, subreddit, limit)
 
