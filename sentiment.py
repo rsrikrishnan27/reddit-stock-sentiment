@@ -33,7 +33,6 @@ def fetch_reddit_posts_raw(stock_keyword, subreddit_choice, limit=100):
 
 def get_stock_price_data(ticker, period="5y", interval="1d"):
     try:
-        # force columns to be single-level (not grouped by ticker)
         df = yf.download(ticker, period=period, interval=interval, group_by="column")
         return df.reset_index()
     except Exception as e:
