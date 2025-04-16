@@ -20,23 +20,33 @@ with st.sidebar:
 st.subheader("📈 Stock Price Trend")
 interval_option = st.radio("Select interval:", ["D", "W", "M", "Y"], horizontal=True)
 
-# Determine period and interval
-if interval_option == "D":
-    period, interval = "30d", "1d"
-elif interval_option == "W":
-    period, interval = "ytd", "1wk"
+# Always pull 5 years of data, filter for default view based on interval
+period, interval = "5y", "1d"
+
+if interval_option == "W":
+    interval = "1wk"
 elif interval_option == "M":
-    period, interval = "1y", "1mo"
-else:  # "Y"
-    period, interval = "5y", "3mo"
+    interval = "1mo"
+elif interval_option == "Y":
+    interval = "3mo"
 
 stock_price_df = get_stock_price_data(stock, period=period, interval=interval)
 
 if stock_price_df.empty:
     st.warning("📉 Could not fetch stock data. Check ticker symbol.")
 else:
+    # Filter for default zoom views
+    if interval_option == "D":
+        zoom_df = stock_price_df[stock_price_df['Date'] >= pd.Timestamp.now() - pd.Timedelta(days=30)]
+    elif interval_option == "W":
+        zoom_df = stock_price_df[stock_price_df['Date'].dt.year == pd.Timestamp.now().year]
+    elif interval_option == "M":
+        zoom_df = stock_price_df[stock_price_df['Date'] >= pd.Timestamp.now() - pd.DateOffset(years=1)]
+    else:  # Y
+        zoom_df = stock_price_df.copy()
+
     fig = px.line(
-        stock_price_df,
+        zoom_df,
         x="Date",
         y="Close",
         title=f"{stock.upper()} Stock Price - Interval: {interval_option}",
@@ -47,7 +57,9 @@ else:
         height=400,
         margin=dict(l=40, r=40, t=50, b=40),
         xaxis_title="Date",
-        yaxis_title="Price (USD)"
+        yaxis_title="Price (USD)",
+        xaxis_rangeslider=dict(visible=True),
+        xaxis=dict(rangeselector=dict(buttons=[]))
     )
     st.plotly_chart(fig, use_container_width=True)
 
