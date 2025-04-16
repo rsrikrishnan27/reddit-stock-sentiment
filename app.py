@@ -37,7 +37,7 @@ elif interval_option == "M":
 elif interval_option == "Y":
     interval = "3mo"
 
-stock_price_df = get_stock_price_data("AAPL", period=period, interval=interval)
+stock_price_df = get_stock_price_data(stock.upper(), period=period, interval=interval)
 
 if stock_price_df.empty:
     st.warning("📉 Could not fetch stock data. Check ticker symbol.")
@@ -56,7 +56,7 @@ else:
         zoom_df,
         x="Date",
         y="Close",
-        title=f"AAPL Stock Price - Interval: {interval_option}",
+        title=f"{stock.upper()} Stock Price - Interval: {interval_option}",
         labels={"Close": "Price (USD)", "Date": "Date"}
     )
     fig.update_layout(
