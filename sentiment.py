@@ -2,7 +2,6 @@ import os
 import praw
 import datetime
 import pandas as pd
-from dotenv import load_dotenv
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import numpy as np
@@ -14,16 +13,12 @@ import sys
 if sys.platform.startswith('win') and sys.version_info >= (3, 8):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    
-# Load secrets
-load_dotenv("secrets.txt")
 
-# Reddit API setup
-reddit = praw.Reddit(
-    client_id=os.getenv("CLIENT_ID"),
-    client_secret=os.getenv("CLIENT_SECRET"),
-    user_agent=os.getenv("USER_AGENT")
-)
+import streamlit as st
+
+client_id = st.secrets["CLIENT_ID"]
+client_secret = st.secrets["CLIENT_SECRET"]
+user_agent = st.secrets["USER_AGENT"]
 
 # Load model + tokenizer
 MODEL_NAME = "cardiffnlp/twitter-roberta-base-sentiment"
