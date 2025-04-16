@@ -1,3 +1,5 @@
+### --- app.py ---
+
 import streamlit as st
 import plotly.express as px
 from sentiment import fetch_reddit_posts, get_stock_price_data
@@ -38,6 +40,13 @@ else:
         y="Close",
         title=f"{stock.upper()} Stock Price ({period_label})",
         labels={"Close": "Price (USD)", "Datetime": "Date"}
+    )
+    fig.update_layout(
+        autosize=True,
+        height=400,
+        margin=dict(l=40, r=40, t=50, b=40),
+        xaxis_title="Date",
+        yaxis_title="Price (USD)"
     )
     st.plotly_chart(fig, use_container_width=True)
 
