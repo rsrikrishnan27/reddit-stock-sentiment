@@ -3,12 +3,12 @@ import plotly.express as px
 from sentiment import fetch_reddit_posts, get_stock_price_data
 import pandas as pd
 
-st.set_page_config(page_title="\ud83d\udcc8 Reddit Stock Sentiment", layout="wide")
-st.title("\ud83d\udcca Reddit Stock Sentiment Analysis")
+st.set_page_config(page_title="📈 Reddit Stock Sentiment", layout="wide")
+st.title("📊 Reddit Stock Sentiment Analysis")
 
 # Sidebar input
 with st.sidebar:
-    st.header("\ud83d\udd0d Search Settings")
+    st.header("🔍 Search Settings")
     stock = st.text_input("Enter a stock keyword or ticker:", value="AAPL")
     subreddit = st.selectbox("Select subreddit:", ["ALL", "wallstreetbets", "stocks", "investing"])
     limit = st.slider("Number of posts to fetch:", min_value=10, max_value=200, value=100)
@@ -16,7 +16,7 @@ with st.sidebar:
     analyze_btn = st.button("Run Sentiment Analysis")
 
 # --- Always show stock price chart first ---
-st.subheader("\ud83d\udcc8 Stock Price Trend")
+st.subheader("📈 Stock Price Trend")
 period_options = {
     "1 Day": ("1d", "5m"),
     "1 Week": ("5d", "30m"),
@@ -30,7 +30,7 @@ period, interval = period_options[period_label]
 stock_price_df = get_stock_price_data(stock, period=period, interval=interval)
 
 if stock_price_df.empty:
-    st.warning("\ud83d\udcc9 Could not fetch stock data. Check ticker symbol.")
+    st.warning("📉 Could not fetch stock data. Check ticker symbol.")
 else:
     fig = px.line(
         stock_price_df,
@@ -47,11 +47,11 @@ if analyze_btn:
         df = fetch_reddit_posts(stock, subreddit, limit)
 
     if df.empty:
-        st.warning("\u26a0\ufe0f No Reddit posts found. Try another keyword.")
+        st.warning("⚠️ No Reddit posts found. Try another keyword.")
     else:
-        st.success(f"\u2705 Analyzed {len(df)} posts mentioning '{stock}'.")
+        st.success(f"✅ Analyzed {len(df)} posts mentioning '{stock}'.")
 
-        st.subheader("\ud83d\udcca Sentiment Distribution")
+        st.subheader("📊 Sentiment Distribution")
         sentiment_counts = df['sentiment'].value_counts().reset_index()
         sentiment_counts.columns = ['Sentiment', 'Count']
         fig = px.bar(
@@ -64,7 +64,7 @@ if analyze_btn:
         )
         st.plotly_chart(fig, use_container_width=True)
 
-        st.subheader("\ud83c\udfc5 Top 5 Reddit Posts by Sentiment Confidence")
+        st.subheader("🏅 Top 5 Reddit Posts by Sentiment Confidence")
         top_5 = df.sort_values(by="confidence", ascending=False).head(5)
 
         sentiment_colors = {
@@ -81,8 +81,8 @@ if analyze_btn:
             st.markdown(f"**{row['title']}**")
             st.markdown(
                 f"""
-                <span style=\"font-size: 14px;\">
-                <b>Sentiment:</b> <span style=\"background-color:{color}; padding:3px 8px; border-radius:4px; color:white;\">
+                <span style="font-size: 14px;">
+                <b>Sentiment:</b> <span style="background-color:{color}; padding:3px 8px; border-radius:4px; color:white;">
                 {sentiment.capitalize()}</span>
                 &nbsp; | &nbsp;
                 <b>Confidence:</b> {confidence}% &nbsp; | &nbsp;
@@ -93,7 +93,7 @@ if analyze_btn:
             )
             st.markdown("---")
 
-        st.subheader("\ud83d\udcdf Reddit Posts with Sentiment + Confidence")
+        st.subheader("🧾 Reddit Posts with Sentiment + Confidence")
         df_display = df[["title", "subreddit", "confidence", "sentiment"]].copy()
         df_display["Confidence %"] = (df_display["confidence"] * 100).round(1)
         df_display = df_display.drop(columns=["confidence"])
@@ -113,7 +113,7 @@ if analyze_btn:
         )
 
         st.markdown("---")
-        st.markdown("### \ud83e\udd16 Model Used")
+        st.markdown("### 🤖 Model Used")
         st.markdown(
             """
             This app uses the **[`cardiffnlp/twitter-roberta-base-sentiment`](https://huggingface.co/cardiffnlp/twitter-roberta-base-sentiment)** model 
