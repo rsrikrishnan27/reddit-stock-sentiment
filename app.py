@@ -32,7 +32,7 @@ with st.sidebar:
         st.session_state.sentiment_loading = True
 
         def run_sentiment_thread():
-            from reddit_sentiment import fetch_reddit_posts_raw
+            from sentiment import fetch_reddit_posts_raw
             df_raw = fetch_reddit_posts_raw(stock, subreddit, limit)
 
             @st.cache_resource
