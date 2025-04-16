@@ -35,6 +35,7 @@ def get_stock_price_data(ticker, period="5y", interval="1d"):
     try:
         df = yf.download(ticker, period=period, interval=interval, group_by="ticker")
 
+        # Flatten any MultiIndex
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.map(lambda x: x[0] if isinstance(x, tuple) else x)
 
