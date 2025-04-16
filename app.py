@@ -14,20 +14,21 @@ with st.sidebar:
     stock = st.text_input("Enter a stock keyword or ticker:", value="AAPL")
     subreddit = st.selectbox("Select subreddit:", ["ALL", "wallstreetbets", "stocks", "investing"])
     limit = st.slider("Number of posts to fetch:", min_value=10, max_value=200, value=100)
-    period_label = st.selectbox("Stock price time range:", ["1 Day", "1 Week", "1 Month", "3 Months", "1 Year", "5 Years"], index=2)
     analyze_btn = st.button("Run Sentiment Analysis")
 
 # --- Always show stock price chart first ---
 st.subheader("📈 Stock Price Trend")
-period_options = {
-    "1 Day": ("1d", "5m"),
-    "1 Week": ("5d", "30m"),
-    "1 Month": ("1mo", "1h"),
-    "3 Months": ("3mo", "1d"),
-    "1 Year": ("1y", "1d"),
-    "5 Years": ("5y", "1wk")
-}
-period, interval = period_options[period_label]
+interval_option = st.radio("Select interval:", ["D", "W", "M", "Y"], horizontal=True)
+
+# Determine period and interval
+if interval_option == "D":
+    period, interval = "30d", "1d"
+elif interval_option == "W":
+    period, interval = "ytd", "1wk"
+elif interval_option == "M":
+    period, interval = "1y", "1mo"
+else:  # "Y"
+    period, interval = "5y", "3mo"
 
 stock_price_df = get_stock_price_data(stock, period=period, interval=interval)
 
@@ -38,7 +39,7 @@ else:
         stock_price_df,
         x="Datetime",
         y="Close",
-        title=f"{stock.upper()} Stock Price ({period_label})",
+        title=f"{stock.upper()} Stock Price - Interval: {interval_option}",
         labels={"Close": "Price (USD)", "Datetime": "Date"}
     )
     fig.update_layout(
