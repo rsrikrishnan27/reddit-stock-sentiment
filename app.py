@@ -57,8 +57,8 @@ stock_price_df = get_stock_price_data(stock.upper(), period="5y", interval="1d")
 if stock_price_df.empty:
     st.warning("📉 Could not fetch stock data. Check ticker symbol.")
 elif 'Date' not in stock_price_df.columns or 'Close' not in stock_price_df.columns:
-    st.error("⚠️ Stock data could not be visualized. The expected columns were not found.")
-    st.write(stock_price_df)
+    st.error("❌ The stock data is missing required columns: 'Date' and/or 'Close'.")
+    st.dataframe(stock_price_df)
 else:
     fig = px.line(
         stock_price_df,
