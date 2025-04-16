@@ -14,7 +14,12 @@ with st.sidebar:
     stock = st.text_input("Enter a stock keyword or ticker:", value="AAPL")
     subreddit = st.selectbox("Select subreddit:", ["ALL", "wallstreetbets", "stocks", "investing"])
     limit = st.slider("Number of posts to fetch:", min_value=10, max_value=200, value=100)
-    run_sentiment = st.button("Run Sentiment Analysis")
+
+    if "run_sentiment" not in st.session_state:
+        st.session_state.run_sentiment = False
+
+    if st.button("Run Sentiment Analysis"):
+        st.session_state.run_sentiment = True
 
 # --- Stock Chart Section ---
 st.subheader("📈 Stock Price Trend")
@@ -74,7 +79,7 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
 # --- Sentiment analysis section ---
-if run_sentiment:
+if st.session_state.run_sentiment:
     with st.spinner("Fetching and analyzing Reddit posts..."):
         df = fetch_reddit_posts(stock, subreddit, limit)
 
@@ -154,3 +159,4 @@ if run_sentiment:
             Its understanding of social media language and informal expressions makes it ideal for analyzing Reddit posts related to stock sentiment.
             """
         )
+        st.session_state.run_sentiment = False
