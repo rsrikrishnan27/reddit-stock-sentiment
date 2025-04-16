@@ -34,10 +34,10 @@ if stock_price_df.empty:
 else:
     fig = px.line(
         stock_price_df,
-        x="Date",
+        x="Datetime",
         y="Close",
         title=f"{stock.upper()} Stock Price ({period_label})",
-        labels={"Close": "Price (USD)", "Date": "Date"}
+        labels={"Close": "Price (USD)", "Datetime": "Date"}
     )
     st.plotly_chart(fig, use_container_width=True)
 
