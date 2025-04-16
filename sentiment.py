@@ -1,19 +1,21 @@
-# --- sentiment.py ---
+# sentiment.py
 
 import praw
 import yfinance as yf
 import pandas as pd
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
-
-# Load Reddit API credentials from secrets or environment
+# Use st.secrets in production, fallback to .env for local
 def get_reddit_instance():
+    import streamlit as st
+    client_id = st.secrets.get("REDDIT_CLIENT_ID", os.getenv("REDDIT_CLIENT_ID"))
+    client_secret = st.secrets.get("REDDIT_CLIENT_SECRET", os.getenv("REDDIT_CLIENT_SECRET"))
+    user_agent = st.secrets.get("REDDIT_USER_AGENT", os.getenv("REDDIT_USER_AGENT"))
+
     return praw.Reddit(
-        client_id=os.getenv("REDDIT_CLIENT_ID"),
-        client_secret=os.getenv("REDDIT_CLIENT_SECRET"),
-        user_agent=os.getenv("REDDIT_USER_AGENT"),
+        client_id=client_id,
+        client_secret=client_secret,
+        user_agent=user_agent
     )
 
 def fetch_reddit_posts_raw(stock_keyword, subreddit_choice, limit=100):
@@ -36,7 +38,6 @@ def fetch_reddit_posts_raw(stock_keyword, subreddit_choice, limit=100):
             })
 
     return pd.DataFrame(posts)
-
 
 def get_stock_price_data(ticker, period="5y", interval="1d"):
     try:
