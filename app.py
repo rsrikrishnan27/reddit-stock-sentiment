@@ -37,10 +37,10 @@ if stock_price_df.empty:
 else:
     fig = px.line(
         stock_price_df,
-        x="Datetime",
+        x="Date",
         y="Close",
         title=f"{stock.upper()} Stock Price - Interval: {interval_option}",
-        labels={"Close": "Price (USD)", "Datetime": "Date"}
+        labels={"Close": "Price (USD)", "Date": "Date"}
     )
     fig.update_layout(
         autosize=True,
