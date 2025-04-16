@@ -8,6 +8,14 @@ import pandas as pd
 st.set_page_config(page_title="📈 Reddit Stock Sentiment", layout="wide")
 st.title("📊 Reddit Stock Sentiment Analysis")
 
+# --- Sidebar input ---
+with st.sidebar:
+    st.header("🔍 Search Settings")
+    stock = st.text_input("Enter a stock keyword or ticker:", value="AAPL")
+    subreddit = st.selectbox("Select subreddit:", ["ALL", "wallstreetbets", "stocks", "investing"])
+    limit = st.slider("Number of posts to fetch:", min_value=10, max_value=200, value=100)
+    run_sentiment = st.button("Run Sentiment Analysis")
+
 # --- Stock Chart Section ---
 st.subheader("📈 Stock Price Trend")
 
@@ -69,14 +77,6 @@ else:
         xaxis=dict(rangeselector=dict(buttons=[]))
     )
     st.plotly_chart(fig, use_container_width=True)
-
-# --- Sidebar input ---
-with st.sidebar:
-    st.header("🔍 Search Settings")
-    stock = st.text_input("Enter a stock keyword or ticker:", value="AAPL")
-    subreddit = st.selectbox("Select subreddit:", ["ALL", "wallstreetbets", "stocks", "investing"])
-    limit = st.slider("Number of posts to fetch:", min_value=10, max_value=200, value=100)
-    run_sentiment = st.button("Run Sentiment Analysis")
 
 # --- Sentiment analysis section ---
 if run_sentiment:
