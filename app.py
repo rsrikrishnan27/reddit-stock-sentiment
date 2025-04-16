@@ -2,9 +2,8 @@
 
 import streamlit as st
 import plotly.express as px
-from sentiment import fetch_reddit_posts, get_stock_price_data
+from sentiment import fetch_reddit_posts_raw, get_stock_price_data
 import pandas as pd
-import threading
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import numpy as np
@@ -20,82 +19,41 @@ with st.sidebar:
     subreddit = st.selectbox("Select subreddit:", ["ALL", "wallstreetbets", "stocks", "investing"])
     limit = st.slider("Number of posts to fetch:", min_value=10, max_value=200, value=100)
 
-    if "run_sentiment" not in st.session_state:
-        st.session_state.run_sentiment = False
-    if "sentiment_loading" not in st.session_state:
-        st.session_state.sentiment_loading = False
-    if "sentiment_df" not in st.session_state:
-        st.session_state.sentiment_df = {}
+    if st.button("Run Sentiment Analysis"):
 
-    if st.button("Run Sentiment Analysis") and not st.session_state.sentiment_loading:
-        st.session_state.run_sentiment = True
-        st.session_state.sentiment_loading = True
+        df_raw = fetch_reddit_posts_raw(stock, subreddit, limit)
 
-        def run_sentiment_thread():
-            from sentiment import fetch_reddit_posts_raw
-            df_raw = fetch_reddit_posts_raw(stock, subreddit, limit)
+        @st.cache_resource
+        def load_model():
+            tokenizer = AutoTokenizer.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
+            model = AutoModelForSequenceClassification.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
+            return tokenizer, model
 
-            @st.cache_resource
-            def load_model():
-                tokenizer = AutoTokenizer.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
-                model = AutoModelForSequenceClassification.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
-                return tokenizer, model
+        tokenizer, model = load_model()
 
-            tokenizer, model = load_model()
+        sentiments = []
+        confidences = []
 
-            texts = df_raw['title'].tolist()
-            batch_size = 32
-            sentiments, confidences = [], []
+        for text in df_raw["title"]:
+            inputs = tokenizer(text, return_tensors="pt", truncation=True)
+            with torch.no_grad():
+                outputs = model(**inputs)
+                probs = F.softmax(outputs.logits, dim=1).numpy()
+                label = np.argmax(probs)
+                confidence = np.max(probs)
+                sentiments.append(label)
+                confidences.append(confidence)
 
-            for i in range(0, len(texts), batch_size):
-                batch = texts[i:i + batch_size]
-                inputs = tokenizer(batch, return_tensors="pt", padding=True, truncation=True)
-                with torch.no_grad():
-                    outputs = model(**inputs)
-                    probs = F.softmax(outputs.logits, dim=1).numpy()
-                    labels = np.argmax(probs, axis=1)
-                    sentiments.extend(labels)
-                    confidences.extend(np.max(probs, axis=1))
+        label_map = {0: "negative", 1: "neutral", 2: "positive"}
+        df_raw['sentiment'] = [label_map[l] for l in sentiments]
+        df_raw['confidence'] = confidences
 
-            label_map = {0: "negative", 1: "neutral", 2: "positive"}
-            df_raw['sentiment'] = [label_map[l] for l in sentiments]
-            df_raw['confidence'] = confidences
-
-            st.session_state.sentiment_df[stock.upper()] = df_raw
-            st.session_state.sentiment_loading = False
-
-        threading.Thread(target=run_sentiment_thread).start()
+        st.session_state.sentiment_df = df_raw
 
 # --- Stock Chart Section ---
 st.subheader("📈 Stock Price Trend")
 
-if "interval_option" not in st.session_state:
-    st.session_state.interval_option = "D"
-
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    if st.button("D"):
-        st.session_state.interval_option = "D"
-with col2:
-    if st.button("W"):
-        st.session_state.interval_option = "W"
-with col3:
-    if st.button("M"):
-        st.session_state.interval_option = "M"
-with col4:
-    if st.button("Y"):
-        st.session_state.interval_option = "Y"
-
-interval_option = st.session_state.interval_option
-period, interval = "5y", "1d"
-if interval_option == "W":
-    interval = "1wk"
-elif interval_option == "M":
-    interval = "1mo"
-elif interval_option == "Y":
-    interval = "3mo"
-
-stock_price_df = get_stock_price_data(stock.upper(), period=period, interval=interval)
+stock_price_df = get_stock_price_data(stock.upper(), period="5y", interval="1d")
 
 if stock_price_df.empty:
     st.warning("📉 Could not fetch stock data. Check ticker symbol.")
@@ -104,12 +62,9 @@ else:
         stock_price_df,
         x="Date",
         y="Close",
-        title=f"{stock.upper()} Stock Price - Interval: {interval_option}",
+        title=f"{stock.upper()} Stock Price - Last 5 Years",
         labels={"Close": "Price (USD)", "Date": "Date"},
     )
-
-    latest_date = stock_price_df["Date"].dt.tz_localize(None).max()
-    default_start = latest_date - pd.Timedelta(days=30)
 
     fig.update_layout(
         autosize=True,
@@ -117,17 +72,14 @@ else:
         margin=dict(l=40, r=40, t=50, b=40),
         xaxis_title="Date",
         yaxis_title="Price (USD)",
-        xaxis_rangeslider=dict(visible=True),
-        xaxis=dict(range=[default_start, latest_date])
+        xaxis_rangeslider=dict(visible=True)
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
 # --- Sentiment analysis section ---
-if st.session_state.sentiment_loading:
-    st.info("⌛ Analyzing Reddit posts...")
-elif stock.upper() in st.session_state.sentiment_df:
-    df = st.session_state.sentiment_df[stock.upper()]
+if "sentiment_df" in st.session_state:
+    df = st.session_state.sentiment_df
     st.success(f"✅ Analyzed {len(df)} posts mentioning '{stock}'.")
 
     st.subheader("📊 Sentiment Distribution")
