@@ -1,0 +1,8 @@
+streamlit
+praw
+pandas
+plotly
+transformers
+torch
+emoji
+scipy
