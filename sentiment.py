@@ -1,18 +1,13 @@
 import praw
 import yfinance as yf
 import pandas as pd
-import os
 import streamlit as st
 
 def get_reddit_instance():
-    client_id = st.secrets.get("REDDIT_CLIENT_ID", os.getenv("REDDIT_CLIENT_ID"))
-    client_secret = st.secrets.get("REDDIT_CLIENT_SECRET", os.getenv("REDDIT_CLIENT_SECRET"))
-    user_agent = st.secrets.get("REDDIT_USER_AGENT", os.getenv("REDDIT_USER_AGENT"))
-
     return praw.Reddit(
-        client_id=client_id,
-        client_secret=client_secret,
-        user_agent=user_agent
+        client_id=st.secrets["REDDIT_CLIENT_ID"],
+        client_secret=st.secrets["REDDIT_CLIENT_SECRET"],
+        user_agent=st.secrets["REDDIT_USER_AGENT"]
     )
 
 def fetch_reddit_posts_raw(stock_keyword, subreddit_choice, limit=100):
@@ -39,8 +34,7 @@ def fetch_reddit_posts_raw(stock_keyword, subreddit_choice, limit=100):
 def get_stock_price_data(ticker, period="5y", interval="1d"):
     try:
         df = yf.download(ticker, period=period, interval=interval)
-        df = df.reset_index()
-        return df
+        return df.reset_index()
     except Exception as e:
         print(f"Error fetching stock data: {e}")
         return pd.DataFrame()
