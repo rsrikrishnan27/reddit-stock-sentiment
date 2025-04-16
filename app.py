@@ -52,13 +52,15 @@ if stock_price_df.empty:
 else:
     fig = px.line(
         stock_price_df,
-
-        zoom_df,
         x="Date",
         y="Close",
         title=f"{stock.upper()} Stock Price - Interval: {interval_option}",
-        labels={"Close": "Price (USD)", "Date": "Date"}
+        labels={"Close": "Price (USD)", "Date": "Date"},
     )
+
+    latest_date = stock_price_df["Date"].dt.tz_localize(None).max()
+    default_start = latest_date - pd.Timedelta(days=30)
+
     fig.update_layout(
         autosize=True,
         height=400,
@@ -66,8 +68,9 @@ else:
         xaxis_title="Date",
         yaxis_title="Price (USD)",
         xaxis_rangeslider=dict(visible=True),
-        xaxis=dict(rangeselector=dict(buttons=[]))
+        xaxis=dict(range=[default_start, latest_date])
     )
+
     st.plotly_chart(fig, use_container_width=True)
 
 # --- Sentiment analysis section ---
