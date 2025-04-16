@@ -35,13 +35,13 @@ stock_price_df = get_stock_price_data(stock, period=period, interval=interval)
 if stock_price_df.empty:
     st.warning("📉 Could not fetch stock data. Check ticker symbol.")
 else:
-    # Filter for default zoom views
+    # Filter for default zoom views with timezone-naive datetime
     if interval_option == "D":
-        zoom_df = stock_price_df[stock_price_df['Date'] >= pd.Timestamp.now() - pd.Timedelta(days=30)]
+        zoom_df = stock_price_df[stock_price_df['Date'].dt.tz_localize(None) >= pd.Timestamp.now() - pd.Timedelta(days=30)]
     elif interval_option == "W":
-        zoom_df = stock_price_df[stock_price_df['Date'].dt.year == pd.Timestamp.now().year]
+        zoom_df = stock_price_df[stock_price_df['Date'].dt.tz_localize(None).dt.year == pd.Timestamp.now().year]
     elif interval_option == "M":
-        zoom_df = stock_price_df[stock_price_df['Date'] >= pd.Timestamp.now() - pd.DateOffset(years=1)]
+        zoom_df = stock_price_df[stock_price_df['Date'].dt.tz_localize(None) >= pd.Timestamp.now() - pd.DateOffset(years=1)]
     else:  # Y
         zoom_df = stock_price_df.copy()
 
