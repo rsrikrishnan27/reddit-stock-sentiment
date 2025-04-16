@@ -12,7 +12,7 @@ st.set_page_config(page_title="📈 Reddit Stock Sentiment", layout="wide")
 st.title("📊 Reddit Stock Sentiment Analysis")
 
 # Display preview image from local repo
-st.image("banner.png", use_column_width=True)
+st.image("banner.png", use_container_width=True)
 
 run_analysis = False  # control flag
 
