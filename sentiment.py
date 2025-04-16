@@ -1,4 +1,7 @@
+### --- reddit_sentiment.py ---
+
 import os
+import streamlit as st
 import praw
 import datetime
 import pandas as pd
@@ -7,15 +10,9 @@ import torch
 import numpy as np
 import re
 import emoji
-import asyncio
-import sys
+import yfinance as yf
 
-if sys.platform.startswith('win') and sys.version_info >= (3, 8):
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-
-import streamlit as st
-
+# --- Reddit API setup ---
 client_id = st.secrets["CLIENT_ID"]
 client_secret = st.secrets["CLIENT_SECRET"]
 user_agent = st.secrets["USER_AGENT"]
@@ -26,17 +23,19 @@ reddit = praw.Reddit(
     user_agent=user_agent
 )
 
-# Load model + tokenizer
+# --- HuggingFace model setup ---
 MODEL_NAME = "cardiffnlp/twitter-roberta-base-sentiment"
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
 labels = ['negative', 'neutral', 'positive']
 
+# --- Preprocess text ---
 def preprocess(text):
     text = emoji.demojize(text)
     text = re.sub(r"http\S+|@\S+|#\S+|[^A-Za-z0-9\s]", "", text)
     return text.strip()
 
+# --- Classify sentiment ---
 def classify_sentiment(text):
     try:
         text = preprocess(text)
@@ -51,7 +50,8 @@ def classify_sentiment(text):
     except Exception as e:
         print("Error during sentiment classification:", e)
         return "neutral", 0.0
-    
+
+# --- Fetch Reddit Posts ---
 def fetch_reddit_posts(stock, subreddit='wallstreetbets', limit=100):
     subreddits = ['wallstreetbets', 'stocks', 'investing'] if subreddit == 'ALL' else [subreddit]
     all_posts = []
@@ -72,3 +72,14 @@ def fetch_reddit_posts(stock, subreddit='wallstreetbets', limit=100):
             })
 
     return pd.DataFrame(all_posts)
+
+# --- Fetch Stock Price Data ---
+def get_stock_price_data(ticker, period="1mo", interval="1d"):
+    try:
+        stock = yf.Ticker(ticker)
+        df = stock.history(period=period, interval=interval)
+        df.reset_index(inplace=True)
+        return df
+    except Exception as e:
+        print(f"Error fetching stock data: {e}")
+        return pd.DataFrame()
