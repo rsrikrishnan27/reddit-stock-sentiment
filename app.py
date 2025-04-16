@@ -28,25 +28,28 @@ if interval_option == "W":
 elif interval_option == "M":
     interval = "1mo"
 elif interval_option == "Y":
-    interval = "3mo"
+    interval = "1y"
 
-stock_price_df = get_stock_price_data(stock, period=period, interval=interval)
+stock_price_df = get_stock_price_data(stock, period="5y", interval=interval)
 
 if stock_price_df.empty:
     st.warning("📉 Could not fetch stock data. Check ticker symbol.")
 else:
     # Filter for default zoom views with timezone-naive datetime
+    stock_price_df['Date'] = stock_price_df['Date'].dt.tz_localize(None)
+    now = pd.Timestamp.now()
+
     if interval_option == "D":
-        zoom_df = stock_price_df[stock_price_df['Date'].dt.tz_localize(None) >= pd.Timestamp.now() - pd.Timedelta(days=30)]
+        default_range_start = now - pd.Timedelta(days=30)
     elif interval_option == "W":
-        zoom_df = stock_price_df[stock_price_df['Date'].dt.tz_localize(None).dt.year == pd.Timestamp.now().year]
+        default_range_start = pd.Timestamp(year=now.year, month=1, day=1)
     elif interval_option == "M":
-        zoom_df = stock_price_df[stock_price_df['Date'].dt.tz_localize(None) >= pd.Timestamp.now() - pd.DateOffset(years=1)]
+        default_range_start = now - pd.DateOffset(years=1)
     else:  # Y
-        zoom_df = stock_price_df.copy()
+        default_range_start = now - pd.DateOffset(years=5)
 
     fig = px.line(
-        zoom_df,
+        stock_price_df,
         x="Date",
         y="Close",
         title=f"{stock.upper()} Stock Price - Interval: {interval_option}",
@@ -59,7 +62,7 @@ else:
         xaxis_title="Date",
         yaxis_title="Price (USD)",
         xaxis_rangeslider=dict(visible=True),
-        xaxis=dict(rangeselector=dict(buttons=[]))
+        xaxis=dict(range=[default_range_start, now])
     )
     st.plotly_chart(fig, use_container_width=True)
 
