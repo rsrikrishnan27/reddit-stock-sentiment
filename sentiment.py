@@ -1,13 +1,10 @@
-# sentiment.py
-
 import praw
 import yfinance as yf
 import pandas as pd
 import os
+import streamlit as st
 
-# Use st.secrets in production, fallback to .env for local
 def get_reddit_instance():
-    import streamlit as st
     client_id = st.secrets.get("REDDIT_CLIENT_ID", os.getenv("REDDIT_CLIENT_ID"))
     client_secret = st.secrets.get("REDDIT_CLIENT_SECRET", os.getenv("REDDIT_CLIENT_SECRET"))
     user_agent = st.secrets.get("REDDIT_USER_AGENT", os.getenv("REDDIT_USER_AGENT"))
