@@ -1,9 +1,7 @@
 streamlit
 praw
+yfinance
 pandas
 plotly
 transformers
 torch
-emoji
-scipy
-yfinance

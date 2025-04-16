@@ -32,9 +32,11 @@ def fetch_reddit_posts_raw(stock_keyword, subreddit_choice, limit=100):
     return pd.DataFrame(posts)
 
 def get_stock_price_data(ticker, period="5y", interval="1d"):
-    try:
-        df = yf.download(ticker, period=period, interval=interval, group_by="column")
-        return df.reset_index()
-    except Exception as e:
-        print(f"Error fetching stock data: {e}")
-        return pd.DataFrame()
+    df = yf.download(ticker, period=period, interval=interval, group_by="column")
+    df = df.reset_index()
+
+    # Flatten MultiIndex columns if any
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
+
+    return df
