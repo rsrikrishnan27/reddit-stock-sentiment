@@ -20,6 +20,12 @@ client_id = st.secrets["CLIENT_ID"]
 client_secret = st.secrets["CLIENT_SECRET"]
 user_agent = st.secrets["USER_AGENT"]
 
+reddit = praw.Reddit(
+    client_id=client_id,
+    client_secret=client_secret,
+    user_agent=user_agent
+)
+
 # Load model + tokenizer
 MODEL_NAME = "cardiffnlp/twitter-roberta-base-sentiment"
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
