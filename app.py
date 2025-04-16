@@ -5,6 +5,10 @@ import plotly.express as px
 from sentiment import fetch_reddit_posts, get_stock_price_data
 import pandas as pd
 import threading
+import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import numpy as np
+import torch.nn.functional as F
 
 st.set_page_config(page_title="📈 Reddit Stock Sentiment", layout="wide")
 st.title("📊 Reddit Stock Sentiment Analysis")
@@ -23,14 +27,41 @@ with st.sidebar:
     if "sentiment_df" not in st.session_state:
         st.session_state.sentiment_df = {}
 
-
     if st.button("Run Sentiment Analysis") and not st.session_state.sentiment_loading:
         st.session_state.run_sentiment = True
         st.session_state.sentiment_loading = True
 
         def run_sentiment_thread():
-            df = fetch_reddit_posts(stock, subreddit, limit)
-            st.session_state.sentiment_df[stock.upper()] = df
+            from reddit_sentiment import fetch_reddit_posts_raw
+            df_raw = fetch_reddit_posts_raw(stock, subreddit, limit)
+
+            @st.cache_resource
+            def load_model():
+                tokenizer = AutoTokenizer.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
+                model = AutoModelForSequenceClassification.from_pretrained("cardiffnlp/twitter-roberta-base-sentiment")
+                return tokenizer, model
+
+            tokenizer, model = load_model()
+
+            texts = df_raw['title'].tolist()
+            batch_size = 32
+            sentiments, confidences = [], []
+
+            for i in range(0, len(texts), batch_size):
+                batch = texts[i:i + batch_size]
+                inputs = tokenizer(batch, return_tensors="pt", padding=True, truncation=True)
+                with torch.no_grad():
+                    outputs = model(**inputs)
+                    probs = F.softmax(outputs.logits, dim=1).numpy()
+                    labels = np.argmax(probs, axis=1)
+                    sentiments.extend(labels)
+                    confidences.extend(np.max(probs, axis=1))
+
+            label_map = {0: "negative", 1: "neutral", 2: "positive"}
+            df_raw['sentiment'] = [label_map[l] for l in sentiments]
+            df_raw['confidence'] = confidences
+
+            st.session_state.sentiment_df[stock.upper()] = df_raw
             st.session_state.sentiment_loading = False
 
         threading.Thread(target=run_sentiment_thread).start()
