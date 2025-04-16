@@ -52,10 +52,7 @@ with st.sidebar:
 # --- Stock Chart Section ---
 st.subheader("📈 Stock Price Trend")
 
-stock_price_df = get_stock_price_data(stock.upper(), period="5y", interval="1d").copy()
-
-# Ensure no duplicate column names for safety with Narwhals
-stock_price_df.columns = [str(col) for col in stock_price_df.columns]
+stock_price_df = get_stock_price_data(stock.upper(), period="5y", interval="1d")
 
 if stock_price_df.empty:
     st.warning("📉 Could not fetch stock data. Check ticker symbol.")
